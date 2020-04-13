@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * @file
+ * module file.
+ */
+
+/**
+ * Alter the processed build of the group.
+ *
+ * @param array $element
+ *   The element being processed.
+ * @param $group
+ *   The group info.
+ * @param $complete_form
+ *   The complete form.
+ */
+function repeatable_field_group_field_group_form_process(array &$element, &$group, &$complete_form) {
+  if ($group->format_type == 'repeatable_field_group') {
+
+    // 1. Set delta and settings from child fields
+    $group_path = join('][', $element['#parents']);
+    $addMore = FALSE;
+    foreach($group->children as $field) {
+      if ($complete_form[$field]['widget']['#cardinality'] >= 0) {
+        $element['#items_count'] = $element['#items_count'] > $complete_form[$field]['widget']['#cardinality'] ? $element['#items_count'] : $complete_form[$field]['widget']['#cardinality'];
+      } else {
+        $element['#items_count'] = $element['#items_count'] > $complete_form[$field]['widget']['#max_delta'] ? $element['#items_count'] : $complete_form[$field]['widget']['#max_delta'];
+        $addMore = TRUE;
+      }
+    }
+
+    // 2. Set add more button if unlimited values.
+    if ($addMore) {
+      $element['#items_count']++;
+      $add_more = [
+        '#type' => 'submit',
+        '#name' => $group->group_name . "_add_more",
+        '#value' => t('Add another item'),
+        '#weight' => 100, // TODO: Place it after the fields.
+        '#attributes' => ['class' => ['field-add-more-submit']],
+        '#limit_validation_errors' => [], // Filled with with child items
+        '#submit' => [
+          [
+            '\Drupal\repeatable_field_group\Plugin\field_group\FieldGroupFormatter\RepeatableFieldGroup',
+            'addMore'
+          ]
+        ],
+        '#fields_parents' => [], // Filled with with child items
+        '#ajax' => [
+          'callback' => [
+            'Drupal\repeatable_field_group\Plugin\field_group\FieldGroupFormatter\RepeatableFieldGroup',
+            'addMoreAjax'
+          ],
+          'wrapper' => "$group->group_name-add-more-wapper",
+          'effect' => 'fade'
+        ],
+        '#group' => $group->group_name
+      ];
+    }
+
+    // 3. Regroup children items into details group.
+    foreach($group->children as $field) {
+      $original_field = $complete_form[$field];
+      unset($complete_form[$field]);
+
+      if ($addMore && isset($original_field['widget']['add_more'])) {
+        // Add field and parents for addMore functionality mappting.
+        $parents = $original_field['#parents'];
+        $add_more['#limit_validation_errors'][] = $parents;
+        array_pop($parents);
+        $add_more['#fields_parents'][$field] = $parents;
+        unset($original_field['widget']['add_more']);
+      }
+
+      for ($i=0; $i < $element['#items_count']; $i++) {
+
+        if (empty($element[$i])) {
+          $element[$i] = [
+            '#type' => 'details',
+            '#title' => "Group $i",
+            '#group' => "$group_path",
+            '#weight' => $i
+          ];
+        }
+
+        if (isset($original_field['widget'][$i])) {
+          $new_widget = array_filter($original_field['widget'], function($key) use ($i) {
+            return !is_numeric($key) || $key == $i;
+          }, ARRAY_FILTER_USE_KEY);
+        }
+
+        $complete_form[$field]['#type'] = "container";
+        $complete_form[$field]['#group'] = "$group_path";
+        $complete_form[$field]['#access'] = TRUE;
+        $complete_form[$field][$i] = $original_field;
+        $complete_form[$field][$i]['widget'] = $new_widget;
+        $complete_form[$field][$i]['#group'] = "$group_path][$i";
+        $complete_form[$field][$i]['#weight'] = $i;
+      }
+    }
+
+    # 4. Place add more in form
+    if ($addMore) {
+      // # 4.1. Add wrapper for ajax
+      $complete_form['#prefix'] = "<div id=\"$group->group_name-add-more-wapper\">";
+      $complete_form['#suffix'] = '</div>';
+      $complete_form[$group->group_name]['#field_name'] = $group->group_name;
+      $complete_form[$group->group_name]['#field_parents'] = $complete_form[$group->group_name]['#parents'];
+
+      // # 4.2. Add button to details group
+      $complete_form['add_more'] = $add_more;
+    }
+  }
+}

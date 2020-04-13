@@ -1,0 +1,7 @@
+name: Repeatable field group
+type: module
+description: Field group to allow grouping multivalue fields
+core: 8.x
+package: Catch
+dependencies:
+  - field_group
