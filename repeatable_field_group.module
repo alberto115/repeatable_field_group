@@ -17,20 +17,19 @@
  */
 function repeatable_field_group_field_group_form_process(array &$element, &$group, &$complete_form) {
   if ($group->format_type == 'repeatable_field_group') {
-
     // 1. Set delta and settings from child fields
     $group_path = join('][', $element['#parents']);
     $addMore = FALSE;
     foreach($group->children as $field) {
-      if ($complete_form[$field]['widget']['#cardinality'] >= 0) {
+      if (isset($complete_form[$field]['widget']['#cardinality']) && $complete_form[$field]['widget']['#cardinality'] >= 0) {
         $element['#items_count'] = $element['#items_count'] > $complete_form[$field]['widget']['#cardinality'] ? $element['#items_count'] : $complete_form[$field]['widget']['#cardinality'];
-      } else {
+      } else if (isset($complete_form[$field]['widget']['#max_delta'])) {
         $element['#items_count'] = $element['#items_count'] > $complete_form[$field]['widget']['#max_delta'] ? $element['#items_count'] : $complete_form[$field]['widget']['#max_delta'];
         $addMore = TRUE;
       }
     }
 
-    // 2. Set add more button if unlimited values.
+    // 2. Set future add more button if needed.
     if ($addMore) {
       $element['#items_count']++;
       $add_more = [
@@ -59,17 +58,16 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
       ];
     }
 
-    // 3. Regroup children items into details group.
+    // 3. Replace children items with new format.
     foreach($group->children as $field) {
+
       $original_field = $complete_form[$field];
       unset($complete_form[$field]);
 
       if ($addMore && isset($original_field['widget']['add_more'])) {
         // Add field and parents for addMore functionality mappting.
-        $parents = $original_field['#parents'];
-        $add_more['#limit_validation_errors'][] = $parents;
-        array_pop($parents);
-        $add_more['#fields_parents'][$field] = $parents;
+        $add_more['#limit_validation_errors'][] = $original_field['#parents'];
+        $add_more['#fields_parents'][$field] = $original_field['widget']['#field_parents'];
         unset($original_field['widget']['add_more']);
       }
 
@@ -84,8 +82,10 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
           ];
         }
 
-        if (isset($original_field['widget'][$i])) {
-          $new_widget = array_filter($original_field['widget'], function($key) use ($i) {
+        if (isset($original_field['widget']['#type']) && $original_field['widget']['#type'] == 'select') {
+          $widget = \Drupal\repeatable_field_group\RepeatableSelect::createWidget($original_field, $i);
+        } else if (isset($original_field['widget'][$i])) {
+          $widget = array_filter($original_field['widget'], function($key) use ($i) {
             return !is_numeric($key) || $key == $i;
           }, ARRAY_FILTER_USE_KEY);
         }
@@ -94,7 +94,7 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
         $complete_form[$field]['#group'] = "$group_path";
         $complete_form[$field]['#access'] = TRUE;
         $complete_form[$field][$i] = $original_field;
-        $complete_form[$field][$i]['widget'] = $new_widget;
+        $complete_form[$field][$i]['widget'] = $widget;
         $complete_form[$field][$i]['#group'] = "$group_path][$i";
         $complete_form[$field][$i]['#weight'] = $i;
       }

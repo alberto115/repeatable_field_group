@@ -19,6 +19,7 @@ use Drupal\Component\Utility\NestedArray;
  * )
  */
 class RepeatableFieldGroup extends FieldGroupFormatterBase {
+
   /**
    * {@inheritdoc}
    */
@@ -49,6 +50,9 @@ class RepeatableFieldGroup extends FieldGroupFormatterBase {
     }
   }
 
+  /**
+   * Handle add more submittions for each of the affected fields.
+   */
   public static function addMore(array $form, FormStateInterface $form_state) {
 
     $button = $form_state->getTriggeringElement();
