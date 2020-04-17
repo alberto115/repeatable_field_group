@@ -37,7 +37,12 @@ class RepeatableSelect {
         // unselected. A disabled multi-select always submits NULL, and the
         // default value should be used.
         if (empty($element['#disabled'])) {
-          return is_array($input) ? $input : array();
+          $user_input = $form_state->getUserInput();
+          if (isset($user_input['op'])) {
+            return array_filter($input, function($v) { return $v !== '_none'; });
+          } else {
+            return [$element['#value_index'] => $input[$element['#value_index']]];
+          }
         }
         else {
           return isset($element['#default_value']) && is_array($element['#default_value']) ? $element['#default_value'] : array();
@@ -63,7 +68,6 @@ class RepeatableSelect {
     // #multiple select fields need a special #name.
     if ($element['#multiple']) {
       unset($element['#attributes']['multiple']);
-      // $element['#attributes']['multiple'] = 'multiple';
     }
     return $element;
   }
