@@ -60,11 +60,9 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
 
     // 3. Replace children items with new format.
     foreach($group->children as $field) {
-      // Reset variables for each new field.
+      // Reset widget for each field.
       $widget = NULL;
       $isEntityReferenceField = FALSE;
-
-      // Seve original field and remove the one on form.
       $original_field = $complete_form[$field];
       unset($complete_form[$field]);
 
@@ -82,19 +80,30 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
             '#type' => 'details',
             '#title' => "Group $i",
             '#group' => "$group_path",
-            '#weight' => $i
+            '#weight' => $i,
+            '#open' => TRUE
           ];
         }
 
         if (isset($original_field['widget']['#type']) && $original_field['widget']['#type'] == 'select') {
-          // Modify widget for select list field widget
           $widget = \Drupal\repeatable_field_group\RepeatableSelect::createWidget($original_field, $i);
+        } else if (
+          isset($original_field['widget']['#type']) &&
+          isset($original_field['widget']['media_library_selection']) &&
+          $original_field['widget']['#type'] == 'fieldset'
+        ) {
+          // Modify widget for media library widget field widget
+          $widget = \Drupal\repeatable_field_group\RepeatableMedia::createWidget($original_field, $i);
+
+          // Set field for ajax selection value
+          $complete_form[$field]['media_library_selection'][$i] = $original_field['widget']['media_library_selection'];
+          $complete_form[$field]['media_library_selection'][$i]['#attributes']['data-media-library-widget-value'] .= "-$i";
+
         } else if ($isEntityReferenceField || isset($original_field['widget'][$i]['target_id'])) {
           $isEntityReferenceField = TRUE;
           // Modify widget for entity referenced field widget
           $widget = \Drupal\repeatable_field_group\RepeatableEntityReference::createWidget($original_field, $i);
         } else if (isset($original_field['widget'][$i])) {
-          // Modify widget for default field widget
           $widget = array_filter($original_field['widget'], function($key) use ($i) {
             return !is_numeric($key) || $key == $i;
           }, ARRAY_FILTER_USE_KEY);
@@ -104,6 +113,7 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
         $complete_form[$field]['#group'] = "$group_path";
         $complete_form[$field]['#access'] = TRUE;
         $complete_form[$field][$i] = $original_field;
+        // Set widget and value index
         $complete_form[$field][$i]['widget'] = $widget;
         $complete_form[$field][$i]['#group'] = "$group_path][$i";
         $complete_form[$field][$i]['#weight'] = $i;
