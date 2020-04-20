@@ -2,16 +2,24 @@
 
 namespace Drupal\repeatable_field_group;
 
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\Element\EntityAutocomplete;
-
+/**
+ * Class RepeatableEntityReference.
+ *
+ * @package Drupal\repeatable_field_group
+ *
+ * Modification of the Entity Reference widget for repeatable field group.
+ */
 class RepeatableEntityReference {
 
   /**
    * Create a new widget from the original field.
+   *
+   * @param array $original_field
+   * @param int $index
+   *
+   * @return array
    */
-  public static function createWidget($original_field, $index) {
+  public static function createWidget(array $original_field, int $index) {
     // Set widget with one value only.
     $widget = array_filter($original_field['widget'], function($key) use ($index) {
       return !is_numeric($key) || $key === $index;

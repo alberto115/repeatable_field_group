@@ -51,7 +51,7 @@ class RepeatableFieldGroup extends FieldGroupFormatterBase {
   }
 
   /**
-   * Handle add more submittions for each of the affected fields.
+   * {@inheritdoc}
    */
   public static function addMore(array $form, FormStateInterface $form_state) {
 
@@ -70,10 +70,7 @@ class RepeatableFieldGroup extends FieldGroupFormatterBase {
   }
 
   /**
-   * Ajax callback for the "Add another item" button.
-   *
-   * This returns the new page content to replace the page content made obsolete
-   * by the form submission.
+   * {@inheritdoc}
    */
   public static function addMoreAjax(array $form, FormStateInterface $form_state) {
     $button = $form_state->getTriggeringElement();

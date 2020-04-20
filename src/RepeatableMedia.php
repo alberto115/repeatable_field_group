@@ -5,21 +5,27 @@ namespace Drupal\repeatable_field_group;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\media_library\Plugin\Field\FieldWidget\MediaLibraryWidget;
 use Drupal\Component\Utility\NestedArray;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\AnnounceCommand;
-use Drupal\Core\Ajax\OpenModalDialogCommand;
-use Drupal\Core\Ajax\InvokeCommand;
-use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\media\Entity\Media;
-use Drupal\media_library\MediaLibraryUiBuilder;
 use Drupal\media_library\MediaLibraryState;
 
+/**
+ * Class RepeatableMedia.
+ *
+ * @package Drupal\repeatable_field_group
+ *
+ * Modification of the media library widget for repeatable field group.
+ */
 class RepeatableMedia extends MediaLibraryWidget {
 
   /**
    * Create a new widget from the original field.
+   *
+   * @param array $original_field
+   * @param int $index
+   *
+   * @return array
    */
-  public static function createWidget($original_field, $index) {
+  public static function createWidget(array $original_field, int $index) {
     // Get selection items for this index
     $selection = array_filter($original_field['widget']['selection'], function($el, $key) use ($index) {
       return is_numeric($key) && $el['#attributes']['data-media-library-item-delta'] == $index;
@@ -68,6 +74,11 @@ class RepeatableMedia extends MediaLibraryWidget {
 
   /**
    * Crate new Media State parameters to target individual fields.
+   *
+   * @param MediaLibraryState $current_state
+   * @param int $index
+   *
+   * @return MediaLibraryState
    */
   public static function updateMediaState(MediaLibraryState $current_state, int $index) {
     $current_parameters = $current_state->all();
