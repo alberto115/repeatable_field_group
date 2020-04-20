@@ -60,7 +60,11 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
 
     // 3. Replace children items with new format.
     foreach($group->children as $field) {
+      // Reset variables for each new field.
+      $widget = NULL;
+      $isEntityReferenceField = FALSE;
 
+      // Seve original field and remove the one on form.
       $original_field = $complete_form[$field];
       unset($complete_form[$field]);
 
@@ -83,8 +87,14 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
         }
 
         if (isset($original_field['widget']['#type']) && $original_field['widget']['#type'] == 'select') {
+          // Modify widget for select list field widget
           $widget = \Drupal\repeatable_field_group\RepeatableSelect::createWidget($original_field, $i);
+        } else if ($isEntityReferenceField || isset($original_field['widget'][$i]['target_id'])) {
+          $isEntityReferenceField = TRUE;
+          // Modify widget for entity referenced field widget
+          $widget = \Drupal\repeatable_field_group\RepeatableEntityReference::createWidget($original_field, $i);
         } else if (isset($original_field['widget'][$i])) {
+          // Modify widget for default field widget
           $widget = array_filter($original_field['widget'], function($key) use ($i) {
             return !is_numeric($key) || $key == $i;
           }, ARRAY_FILTER_USE_KEY);
