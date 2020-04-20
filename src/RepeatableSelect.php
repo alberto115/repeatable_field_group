@@ -5,12 +5,24 @@ namespace Drupal\repeatable_field_group;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\Select;
 
+/**
+ * Class RepeatableSelect.
+ *
+ * @package Drupal\repeatable_field_group
+ *
+ * Modification of the select list widget for repeatable field group.
+ */
 class RepeatableSelect {
 
   /**
    * Create a new widget from the original field.
+   *
+   * @param array $original_field
+   * @param int $index
+   *
+   * @return array
    */
-  public static function createWidget($original_field, $index) {
+  public static function createWidget(array $original_field, int $index) {
     $class = '\Drupal\repeatable_field_group\RepeatableSelect';
     $original_field['widget']['#value_callback'] = [
       $class,
