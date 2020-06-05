@@ -69,6 +69,8 @@ class RepeatableMedia extends MediaLibraryWidget {
       ]
     ];
 
+    unset($widget['media_library_selection']);
+
     return $widget;
   }
 
