@@ -32,9 +32,10 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
     // 2. Set future add more button if needed.
     if ($addMore) {
       $element['#items_count']++;
+      $name = join('_', $element['#parents']);
       $add_more = [
         '#type' => 'submit',
-        '#name' => $group->group_name . "_add_more",
+        '#name' => $name . "_add_more",
         '#value' => t('Add another item'),
         '#weight' => 100, // TODO: Place it after the fields.
         '#attributes' => ['class' => ['field-add-more-submit']],
@@ -51,7 +52,7 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
             'Drupal\repeatable_field_group\Plugin\field_group\FieldGroupFormatter\RepeatableFieldGroup',
             'addMoreAjax'
           ],
-          'wrapper' => "$group->group_name-add-more-wapper",
+          'wrapper' => "$name-add-more-wapper",
           'effect' => 'fade'
         ],
         '#group' => $group->group_name
@@ -67,6 +68,7 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
       unset($complete_form[$field]);
 
       if ($addMore && isset($original_field['widget']['add_more'])) {
+        // dump($group->group_name, $add_more, $original_field['widget']['add_more']);
         // Add field and parents for addMore functionality mappting.
         $add_more['#limit_validation_errors'][] = $original_field['#parents'];
         $add_more['#fields_parents'][$field] = $original_field['widget']['#field_parents'];
@@ -104,9 +106,7 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
           // Modify widget for entity referenced field widget
           $widget = \Drupal\repeatable_field_group\RepeatableEntityReference::createWidget($original_field, $i);
         } else if (isset($original_field['widget'][$i])) {
-          $widget = array_filter($original_field['widget'], function($key) use ($i) {
-            return !is_numeric($key) || $key == $i;
-          }, ARRAY_FILTER_USE_KEY);
+          $widget = \Drupal\repeatable_field_group\RepeatableDefaultWidget::createWidget($original_field, $i);
         }
 
         $complete_form[$field]['#type'] = "container";
@@ -123,7 +123,7 @@ function repeatable_field_group_field_group_form_process(array &$element, &$grou
     # 4. Place add more in form
     if ($addMore) {
       // # 4.1. Add wrapper for ajax
-      $complete_form['#prefix'] = "<div id=\"$group->group_name-add-more-wapper\">";
+      $complete_form['#prefix'] = "<div id=\"$name-add-more-wapper\">";
       $complete_form['#suffix'] = '</div>';
       $complete_form[$group->group_name]['#field_name'] = $group->group_name;
       $complete_form[$group->group_name]['#field_parents'] = $complete_form[$group->group_name]['#parents'];
